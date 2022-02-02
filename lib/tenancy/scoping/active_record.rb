@@ -8,7 +8,7 @@ module Tenancy
       tenant_names.each do |tenant_name|
         # validates and belongs_to
         klass.validates   tenant_name, presence: true
-        klass.belongs_to  tenant_name, options
+        klass.belongs_to  tenant_name, **options
 
         tenant            = Tenant.new(tenant_name, options[:class_name], klass)
         self.tenants      << tenant
@@ -18,16 +18,15 @@ module Tenancy
 
         # override to return current tenant instance
         # so that it doesn"t touch db
-        klass.send(:define_method, tenant_name, lambda { |reload=false|
-          return super(reload) if reload
+        klass.send(:define_method, tenant_name, lambda {
           return tenant.klass.current if send(tenant.foreign_key) == tenant.klass.current_id
-          super(reload)
+          super()
         })
       end
     end
 
     def tenant_scope(tenant_names)
-      if ::ActiveRecord::VERSION::MAJOR == 4 &&  ::ActiveRecord::VERSION::MINOR >= 1
+      if ::ActiveRecord::VERSION::MAJOR > 4 || (::ActiveRecord::VERSION::MAJOR == 4 && ::ActiveRecord::VERSION::MINOR >= 1)
         foreign_keys = if tenant_names.blank?
           tenants.map(&:foreign_key)
         else
@@ -48,7 +47,7 @@ module Tenancy
     end
 
     def default_scoped
-      if ::ActiveRecord::VERSION::MAJOR == 4 && ::ActiveRecord::VERSION::MINOR >= 1
+      if ::ActiveRecord::VERSION::MAJOR > 4 || (::ActiveRecord::VERSION::MAJOR == 4 && ::ActiveRecord::VERSION::MINOR >= 1)
         klass.where(nil).default_scoped
       else
         klass.where(nil).with_default_scope
