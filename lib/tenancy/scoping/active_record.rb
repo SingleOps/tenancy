@@ -14,7 +14,7 @@ module Tenancy
         self.tenants      << tenant
 
         # default_scope
-        klass.send(:default_scope, lambda { klass.where(:"#{tenant.foreign_key}" => tenant.klass.current_id) if tenant.klass.current_id })
+        klass.send(:default_scope, lambda { where(:"#{tenant.foreign_key}" => tenant.klass.current_id) if tenant.klass.current_id })
 
         # override to return current tenant instance
         # so that it doesn"t touch db
